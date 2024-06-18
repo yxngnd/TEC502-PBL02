@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank API Frontend</title>
+</head>
+<body>
+    <h1>Bank API Frontend</h1>
+
+    <h2>Check Balance</h2>
+    <label for="account_id">Account ID:</label>
+    <input type="text" id="account_id">
+    <button onclick="checkBalance()">Check Balance</button>
+    <p id="balance"></p>
+
+    <h2>Deposit</h2>
+    <label for="deposit_id">Account ID:</label>
+    <input type="text" id="deposit_id">
+    <label for="deposit_amount">Amount:</label>
+    <input type="number" id="deposit_amount">
+    <button onclick="deposit()">Deposit</button>
+
+    <h2>Withdraw</h2>
+    <label for="withdraw_id">Account ID:</label>
+    <input type="text" id="withdraw_id">
+    <label for="withdraw_amount">Amount:</label>
+    <input type="number" id="withdraw_amount">
+    <button onclick="withdraw()">Withdraw</button>
+
+    <script>
+        function checkBalance() {
+            var accountId = document.getElementById("account_id").value;
+            fetch("http://localhost:8080/balance/" + accountId)
+                .then(response => response.text())
+                .then(data => document.getElementById("balance").innerText = "Balance: " + data);
+        }
+
+        function deposit() {
+            var accountId = document.getElementById("deposit_id").value;
+            var amount = document.getElementById("deposit_amount").value;
+            fetch("http://localhost:8080/deposit/" + accountId + "/" + amount, { method: 'POST' });
+        }
+
+        function withdraw() {
+            var accountId = document.getElementById("withdraw_id").value;
+            var amount = document.getElementById("withdraw_amount").value;
+            fetch("http://localhost:8080/withdraw/" + accountId + "/" + amount, { method: 'POST' });
+        }
+    </script>
+</body>
+</html>
