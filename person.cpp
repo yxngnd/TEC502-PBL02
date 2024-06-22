@@ -10,6 +10,8 @@ class Person{
 
     public:
 
+        Person(){}
+
         Person(std::string nameInit, std::string birthdayInit, std::string cpfInit){
             name = nameInit;
             birthday = birthdayInit;
@@ -36,7 +38,7 @@ class Person{
             return birthday;
         }
 
-        std::string getCpf(){
+        std::string getCpf() const {
             return cpf;
         }
 };

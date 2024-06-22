@@ -6,9 +6,6 @@
 
 using json = nlohmann::json;
 
-enum class Vote { COMMIT, ABORT };
-enum class Decision { COMMIT, ABORT };
-
 class Bank{
     private:
         std::string name;
