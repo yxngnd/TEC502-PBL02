@@ -2,9 +2,8 @@
 #include <iostream>
 #include <map>
 #include <mutex>
-#include "account.cpp"
+#include "bank.cpp"
 #include <vector>
-#include "person.cpp"
 
 std::mutex accounts_mutex;
 
@@ -23,8 +22,7 @@ int main() {
     crow::SimpleApp app;
 
     Account account;
-    Person p("jorge", "01/01/2001", "012345678910");
-    Account a(1, "123", "123", 20, p);
+    Bank bank;
 
     CROW_ROUTE(app, "/")
     ([](const crow::request& req){
@@ -33,14 +31,14 @@ int main() {
 
     CROW_ROUTE(app, "/login")
     .methods(crow::HTTPMethod::POST)
-    ([&account](const crow::request& req) {
+    ([&bank](const crow::request& req) {
         auto body = crow::json::load(req.body);
         if (!body || !body.has("cpf") || !body.has("password")) {
             return crow::response(400);
         }
 
-        Account account(1, "", "", 0.0, Person("", "", ""));
-        bool success = account.login(body["cpf"].s(), body["password"].s(), account);
+        Account account(0, "", "", 0.0, Person("", "", ""));
+        bool success = bank.login(body["cpf"].s(), body["password"].s(), account);
         if (success) {
             crow::json::wvalue res;
             res["nome"] = account.person.getName();
@@ -53,14 +51,14 @@ int main() {
     });
 
     CROW_ROUTE(app, "/register").methods(crow::HTTPMethod::POST)
-    ([&account](const crow::request& req){
+    ([&bank](const crow::request& req){
         auto body = crow::json::load(req.body);
         if(!body || !body.has("name") || !body.has("cpf") || !body.has("birthday")){
             return crow::response(400);
         }
 
         Person person(body["name"].s(), body["cpf"].s(), body["birthday"].s());
-        bool success = account.registerAccount(person, body["agency"].s(), body["password"].s());
+        bool success = bank.registerAccount(person, body["agency"].s(), body["password"].s());
         if(success){
             return crow::response(200, "Account created successfully");
         }
@@ -70,13 +68,13 @@ int main() {
     });
 
     CROW_ROUTE(app, "/deposit").methods(crow::HTTPMethod::POST)
-    ([&account](const crow::request& req) {
+    ([&bank](const crow::request& req) {
         auto body = crow::json::load(req.body);
         if(!body || !body.has("cpf") || !body.has("value")){
             return crow::response(400, "Invalid JSON");
         }
 
-        bool success = account.deposit(body["cpf"].s(), body["value"].d());
+        bool success = bank.deposit(body["cpf"].s(), body["value"].d());
         if (success) {
             return crow::response(200);
         } else {
@@ -85,13 +83,13 @@ int main() {
     });
 
     CROW_ROUTE(app, "/withdraw").methods(crow::HTTPMethod::POST)
-    ([&account](const crow::request& req) {
+    ([&bank](const crow::request& req) {
         auto body = crow::json::load(req.body);
         if(!body || !body.has("cpf") || !body.has("valor")){
             return crow::response(400);
         }
 
-        bool success = account.withdraw(body["cpf"].s(), body["value"].d());
+        bool success = bank.withdraw(body["cpf"].s(), body["value"].d());
         if(success){
             return crow::response(200);
         }
@@ -101,13 +99,13 @@ int main() {
     });
 
     CROW_ROUTE(app, "/transfer").methods(crow::HTTPMethod::POST)
-    ([&account](const crow::request& req) {
+    ([&bank](const crow::request& req) {
         auto body = crow::json::load(req.body);
         if(!body || !body.has("senderCpf") || !body.has("receiverCpf") || !body.has("value")){
             return crow::response(400);
         }
 
-        bool success = account.transfer(body["senderCpf"].s(), body["receiverCpf"].s(), body["value"].d());
+        bool success = bank.transfer(body["senderCpf"].s(), body["receiverCpf"].s(), body["value"].d());
         if(success){
             return crow::response(200, "Transfer completed successfully");
         }
