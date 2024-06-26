@@ -4,6 +4,8 @@
 #include <mutex>
 #include "bank.cpp"
 #include <vector>
+#include <fstream>
+#include <sstream>
 
 std::mutex accounts_mutex;
 
@@ -18,19 +20,43 @@ bool authenticate(const std::string& cpf, const std::string& password) {
 }
 */
 
+std::unordered_map<std::string, std::string> sessions;
+
+std::string generateSessionToken() {
+    // Gera um token de sessão aleatório
+    std::string token = std::to_string(std::rand()) + std::to_string(std::time(0));
+    return token;
+}
+
 int main() {
     crow::SimpleApp app;
 
-    Account account;
+    IndividualAccount account;
     Bank bank;
 
-    CROW_ROUTE(app, "/")
-    ([](const crow::request& req){
-
+    CROW_ROUTE(app, "/").methods(crow::HTTPMethod::GET)
+    ([]() {
+        std::ifstream file("../interfaces/index.html");
+        if (!file.is_open()) {
+            return crow::response(404, "File not found.");
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return crow::response(buffer.str());
     });
 
-    CROW_ROUTE(app, "/login")
-    .methods(crow::HTTPMethod::POST)
+    CROW_ROUTE(app, "/login").methods(crow::HTTPMethod::GET)
+    ([](){
+        std::ifstream file("login.html");
+        if (!file.is_open()){
+            return crow::response(404, "File not found.");
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return crow::response(buffer.str());
+    });
+
+    CROW_ROUTE(app, "/login").methods(crow::HTTPMethod::POST)
     ([&bank](const crow::request& req) {
         auto body = crow::json::load(req.body);
         if (!body || !body.has("cpf") || !body.has("password")) {
@@ -41,9 +67,14 @@ int main() {
         bool success = bank.login(body["cpf"].s(), body["password"].s(), account);
         if (success) {
             crow::json::wvalue res;
-            res["nome"] = account.person.getName();
+
+            std::string sessionToken = generateSessionToken();
+            sessions[sessionToken] = account.person.getCpf();
+
+            res["name"] = account.person.getName();
             res["cpf"] = account.person.getCpf();
-            res["saldo"] = account.getBalance();
+            res["balance"] = account.getBalance();
+            res["token"] = sessionToken; 
             return crow::response(200, res);
         } else {
             return crow::response(401, "Invalid credentials");
@@ -111,21 +142,6 @@ int main() {
         }
         else{
             return crow::response(404, "Transfer cannot be completed");
-        }
-    });
-
-    CROW_ROUTE(app, "/accounts/<string>")
-    ([](const crow::request& req, std::string accountId){
-        
-    });
-
-    CROW_ROUTE(app, "/balance/<string>")
-    ([](const crow::request& req, std::string accountId) {
-        if (accounts.find(accountId) != accounts.end()) {
-            return crow::response(std::to_string(accounts[accountId].getBalance()));
-        } 
-        else {
-            return crow::response(404);
         }
     });
 

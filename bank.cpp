@@ -4,34 +4,12 @@
 #include <vector>
 #include "account.cpp"
 
-enum class Vote { COMMIT, ABORT };
-enum class Decision { COMMIT, ABORT };
-
 std::unordered_map<std::string, Account> accounts;
 
-class Participant{
-    public:
-        virtual Vote prepare() = 0;
-        virtual void commit() = 0;
-        virtual void abort() = 0;
-};
-
-class Coordinator{
+class Bank{
     private:
-        std::vector<Participant *> participants;
-    public:
-
-        void addParticipant(Participant* p){
-
-        }
-
-        void execute(){
-
-        }
-};
-
-class Bank : public Participant{
-    private:
+        std::string host;
+        std::string port;
         std::string name;
         std::mutex mtx;
         std::map<std::string, Account> accounts;
@@ -90,16 +68,24 @@ class Bank : public Participant{
             return false;
         }
 
-        Vote prepare() override{
+        bool exit(){
 
+            return true;
         }
 
-        void commit() override{
+        bool entry(){
 
+            return true;
         }
 
-        void abort() override{
+        bool defineHost(std::string newHost){
+            host = newHost;
+            return true;
+        }
 
+        bool definePort(std::string newPort){
+            port = newPort;
+            return true;
         }
 
 };

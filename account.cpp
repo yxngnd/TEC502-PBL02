@@ -59,15 +59,12 @@ class Account{
 
 class IndividualAccount : private Account{
 
-    private:
+    public:
         Person person;
 };
 
 class JointAccount : private Account{
-    Person person1;
-    Person person2;
-};
-
-class EntityAccount : private Account{
-
+    public:
+        Person person1;
+        Person person2;
 };
