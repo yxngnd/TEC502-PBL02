@@ -4,11 +4,10 @@
 #include <vector>
 #include "account.cpp"
 
-std::unordered_map<std::string, Account> accounts;
+using json = nlohmann::json;
 
 class Bank{
     private:
-        std::string name;
         std::mutex mtx;
         std::multimap<std::string, Account> accounts;
     public:
@@ -50,8 +49,30 @@ class Bank{
             return false;
         }
 
+        json getAccountsByCpf(const std::string& cpf) {
+            std::lock_guard<std::mutex> lock(mtx);
+            auto range = accounts.equal_range(cpf);
+            json result = json::array();
+            for (auto it = range.first; it != range.second; ++it) {
+                json account_json;
+                to_json(account_json, it->second);
+                result.push_back(account_json);
+            }
+            return result;
+        }
+
+        void to_json(json& j, Account& account) {
+            j = json{
+                {"name", account.getName()},
+                {"cpf", account.getCpf()},
+                {"type", account.getType()},
+                {"balance", account.getBalance()},
+            };
+        }
+
         bool deposit(const std::string& cpf, double value){
             std::lock_guard<std::mutex> lock(mtx);
+            std::cout << cpf << " " << value << std::endl;
             auto it = accounts.find(cpf);
             if(it != accounts.end()){
                 it->second.addBalance(value);
@@ -62,6 +83,7 @@ class Bank{
 
         bool withdraw(const std::string& cpf, double value){
             std::lock_guard<std::mutex> lock(mtx);
+            std::cout << cpf << " " << value << std::endl;
             auto it = accounts.find(cpf);
             if(it != accounts.end() && it->second.getBalance() >= value){
                 it->second.subBalance(value);
