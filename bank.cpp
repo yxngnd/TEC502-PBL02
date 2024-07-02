@@ -8,11 +8,9 @@ std::unordered_map<std::string, Account> accounts;
 
 class Bank{
     private:
-        std::string host;
-        std::string port;
         std::string name;
         std::mutex mtx;
-        std::map<std::string, Account> accounts;
+        std::multimap<std::string, Account> accounts;
     public:
         std::string viewAccounts();
         std::string viewTransfers();
@@ -27,13 +25,29 @@ class Bank{
             return false;
         }
 
-        bool registerAccount(const Person& person, const std::string& agency, const std::string& password) {
+        bool registerAccount(const std::string& name, const std::string& cpf, bool type, const std::string& password) {
             std::lock_guard<std::mutex> lock(mtx);
-            if (accounts.find(person.getCpf()) != accounts.end()) {
-                return false;
+
+            // Check if there is already an account with the same CPF
+            auto range = accounts.equal_range(cpf);
+            for (auto it = range.first; it != range.second; ++it) {
+                if (it->second.getCpf() == cpf && it->second.getType() == type) {
+                    return false; // Account with the same CPF already exists
+                }
             }
-            accounts[person.getCpf()] = Account(1 , agency, password, 20, person);
+
+            accounts.insert({cpf, Account(name, cpf, type, password, 0)});
             return true;
+        }
+
+        bool getAccount(std::string& cpf, Account& account){
+            std::lock_guard<std::mutex> lock(mtx);
+            auto it = accounts.find(cpf);
+            if (it != accounts.end()) {
+                account = it->second;
+                return true;
+            }
+            return false;
         }
 
         bool deposit(const std::string& cpf, double value){
@@ -56,11 +70,12 @@ class Bank{
             return false;
         }
 
-        bool transfer(const std::string& senderCpf, const std::string& receiverCpf, double value){
+        bool prepareTransaction(const std::string& senderCpf, const std::string& receiverCpf, double value) {
             std::lock_guard<std::mutex> lock(mtx);
             auto itSender = accounts.find(senderCpf);
             auto itReceiver = accounts.find(receiverCpf);
-            if(itSender != accounts.end() && itReceiver != accounts.end() && itSender->second.getBalance() >= value){
+            if (itSender != accounts.end() && itReceiver != accounts.end() && itSender->second.getBalance() >= value) {
+                // Prepare phase: Tentatively decrement balance of Sender and increment balance of Receiver
                 itSender->second.subBalance(value);
                 itReceiver->second.addBalance(value);
                 return true;
@@ -68,24 +83,39 @@ class Bank{
             return false;
         }
 
-        bool exit(){
-
-            return true;
+        bool confirmTransaction(const std::string& senderCpf, const std::string& receiverCpf, double value) {
+            std::lock_guard<std::mutex> lock(mtx);
+            auto itSender = accounts.find(senderCpf);
+            auto itReceiver = accounts.find(receiverCpf);
+            if (itSender != accounts.end() && itReceiver != accounts.end()) {
+                // Commit phase: The tentative changes are already applied, so just confirm them
+                return true;
+            }
+            return false;
         }
 
-        bool entry(){
-
-            return true;
+        bool cancelTransaction(const std::string& senderCpf, const std::string& receiverCpf, double value) {
+            std::lock_guard<std::mutex> lock(mtx);
+            auto itSender = accounts.find(senderCpf);
+            auto itReceiver = accounts.find(receiverCpf);
+            if (itSender != accounts.end() && itReceiver != accounts.end()) {
+                // Abort phase: Rollback the tentative changes
+                itSender->second.subBalance(value);
+                itReceiver->second.addBalance(value);
+                return true;
+            }
+            return false;
         }
 
-        bool defineHost(std::string newHost){
-            host = newHost;
-            return true;
-        }
-
-        bool definePort(std::string newPort){
-            port = newPort;
-            return true;
+        bool transfer(const std::string& senderCpf, const std::string& receiverCpf, double value) {
+            if (prepareTransaction(senderCpf, receiverCpf, value)) {
+                if (confirmTransaction(senderCpf, receiverCpf, value)) {
+                    return true;
+                } else {
+                    cancelTransaction(senderCpf, receiverCpf, value);
+                }
+            }
+            return false;
         }
 
 };

@@ -7,29 +7,43 @@
 class Account{
 
     private:
-        short int id;
-        std::string agency;
+        std::string name;
+        std::string cpf;
+        bool type;
         std::string password;
         double balance;
     public:
-        Person person;
+        
+        enum class AccountType { Individual = 0, Joint = 1 };
 
         Account(){}
 
-        Account(int id, std::string agency, std::string password, double balance, Person person) : person(person){
-            id = id;
-            agency = agency;
+        Account(std::string name, std::string cpf, bool type, std::string password, double balance) : name(name), cpf(cpf), type(type), password(password), balance(balance){
+            name = name;
+            cpf = cpf;
+            type = type;
             password = password;
             balance = balance;
-            person = person;
         }
 
-        void setAgency(std::string newAgency){
-            agency = newAgency;
+        void setName(std::string newName){
+            name = newName;
+        }    
+
+        void setCpf(std::string newCpf){
+            cpf = newCpf;
         }
 
-        std::string getAgency(){
-            return agency;
+        std::string getName(){
+            return name;
+        }
+
+        std::string getCpf(){
+            return cpf;
+        }
+
+        bool getType(){
+            return type;
         }
 
         void setPassword(std::string newPassword){
@@ -49,22 +63,12 @@ class Account{
         }
 
         double addBalance(double value){
+            balance += value;
             return balance + value;
         }
 
         double subBalance(double value){
+            balance -= value;
             return balance - value;
         }
-};
-
-class IndividualAccount : private Account{
-
-    public:
-        Person person;
-};
-
-class JointAccount : private Account{
-    public:
-        Person person1;
-        Person person2;
 };

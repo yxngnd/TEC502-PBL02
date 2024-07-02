@@ -9,17 +9,12 @@
 
 std::mutex accounts_mutex;
 
-/*
-bool authenticate(const std::string& cpf, const std::string& password) {
-    std::lock_guard<std::mutex> lock(accounts_mutex);
-    auto it = accounts.find(cpf);
-    if (it != accounts.end() && it->second.getPassword() == password) {
-        return true;
-    }
-    return false;
-}
-*/
+std::unordered_map<std::string, std::string> consortium = {
 
+    {"BANCO1", "127.0.0.1:8080"},
+    {"BANCO2", "127.0.0.1:8081"}
+
+};
 std::unordered_map<std::string, std::string> sessions;
 
 std::string generateSessionToken() {
@@ -31,7 +26,7 @@ std::string generateSessionToken() {
 int main() {
     crow::SimpleApp app;
 
-    IndividualAccount account;
+    Account account;
     Bank bank;
 
     CROW_ROUTE(app, "/").methods(crow::HTTPMethod::GET)
@@ -63,16 +58,17 @@ int main() {
             return crow::response(400);
         }
 
-        Account account(0, "", "", 0.0, Person("", "", ""));
+        Account account("", "", 0, "", 0.0);
         bool success = bank.login(body["cpf"].s(), body["password"].s(), account);
         if (success) {
             crow::json::wvalue res;
 
             std::string sessionToken = generateSessionToken();
-            sessions[sessionToken] = account.person.getCpf();
+            sessions[sessionToken] = account.getCpf();
 
-            res["name"] = account.person.getName();
-            res["cpf"] = account.person.getCpf();
+            res["name"] = account.getName();
+            res["cpf"] = account.getCpf();
+            res["type"] = account.getType();
             res["balance"] = account.getBalance();
             res["token"] = sessionToken; 
             return crow::response(200, res);
@@ -84,12 +80,11 @@ int main() {
     CROW_ROUTE(app, "/register").methods(crow::HTTPMethod::POST)
     ([&bank](const crow::request& req){
         auto body = crow::json::load(req.body);
-        if(!body || !body.has("name") || !body.has("cpf") || !body.has("birthday")){
+        if(!body || !body.has("name") || !body.has("cpf")){
             return crow::response(400);
         }
 
-        Person person(body["name"].s(), body["cpf"].s(), body["birthday"].s());
-        bool success = bank.registerAccount(person, body["agency"].s(), body["password"].s());
+        bool success = bank.registerAccount(body["name"].s(), body["cpf"].s(), body["type"].i(), body["password"].s());
         if(success){
             return crow::response(200, "Account created successfully");
         }
@@ -97,6 +92,25 @@ int main() {
             return crow::response(400, "Error when creating account");
         }
     });
+
+    CROW_ROUTE(app, "/account").methods(crow::HTTPMethod::GET)
+    ([&bank](const crow::request& req){
+        std::string token = req.url_params.get("token");
+        Account account("", "", 0, "", 0.0);
+        if(bank.getAccount(sessions[token], account)){
+            crow::json::wvalue res;
+            res["name"] = account.getName();
+            res["cpf"] = account.getCpf();
+            res["type"] = account.getType();
+            res["balance"] = account.getBalance();
+            res["token"] = token; 
+            return crow::response(200, res);
+        }
+        else{
+            return crow::response(400, "This account doesnt exist.");
+        }
+    });
+    
 
     CROW_ROUTE(app, "/deposit").methods(crow::HTTPMethod::POST)
     ([&bank](const crow::request& req) {
@@ -107,7 +121,7 @@ int main() {
 
         bool success = bank.deposit(body["cpf"].s(), body["value"].d());
         if (success) {
-            return crow::response(200);
+            return crow::response(200, "Deposit make with success");
         } else {
             return crow::response(404);
         }
@@ -116,13 +130,13 @@ int main() {
     CROW_ROUTE(app, "/withdraw").methods(crow::HTTPMethod::POST)
     ([&bank](const crow::request& req) {
         auto body = crow::json::load(req.body);
-        if(!body || !body.has("cpf") || !body.has("valor")){
+        if(!body || !body.has("cpf") || !body.has("value")){
             return crow::response(400);
         }
 
         bool success = bank.withdraw(body["cpf"].s(), body["value"].d());
         if(success){
-            return crow::response(200);
+            return crow::response(200, "Withdraw make with success");
         }
         else{
             return crow::response(404);
