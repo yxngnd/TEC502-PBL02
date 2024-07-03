@@ -9,9 +9,22 @@ using json = nlohmann::json;
 class Bank{
     private:
         std::mutex mtx;
-        std::multimap<std::string, Account> accounts;
+        std::map<std::string, Account> accounts;
     public:
         //std::string viewAccounts();
+
+        // Função auxiliar para separar os cpfs em contas conjuntas
+        std::vector<std::string> splitCpf(const std::string& cpf) {
+            std::vector<std::string> cpfs;
+            size_t pos = cpf.find('&');
+            if (pos != std::string::npos) {
+                cpfs.push_back(cpf.substr(0, pos));
+                cpfs.push_back(cpf.substr(pos + 1));
+            } else {
+                cpfs.push_back(cpf);
+            }
+            return cpfs;
+        }
 
         bool login(const std::string& cpf, const std::string& password, Account& account) {
             std::lock_guard<std::mutex> lock(mtx);
@@ -25,13 +38,15 @@ class Bank{
 
         bool registerAccount(const std::string& name, const std::string& cpf, bool type, const std::string& password) {
             std::lock_guard<std::mutex> lock(mtx);
-            auto range = accounts.equal_range(cpf);
-            for (auto it = range.first; it != range.second; ++it) {
-                if (it->second.getCpf() == cpf && it->second.getType() == type) {
+            
+            auto it = accounts.find(cpf);
+            if (it != accounts.end()) {
+                // Se a conta já existe e o tipo não permite duplicatas, retorne false
                     return false;
-                }
             }
-            accounts.insert({cpf, Account(name, cpf, type, password, 0)});
+            
+            // Insira a nova conta ou atualize a existente
+            accounts[cpf] = Account(name, cpf, type, password, 0);
             return true;
         }
 
@@ -47,17 +62,20 @@ class Bank{
 
         json getAccountsByCpf(const std::string& cpf) {
             std::lock_guard<std::mutex> lock(mtx);
-            auto range = accounts.equal_range(cpf);
             json result = json::array();
-            for (auto it = range.first; it != range.second; ++it) {
-                json account_json;
-                to_json(account_json, it->second);
-                result.push_back(account_json);
+
+            for (auto& pair : accounts) {
+                if (pair.first.find(cpf) != std::string::npos) {
+                    json accountJson;
+                    toJson(accountJson, pair.second);
+                    result.push_back(accountJson);
+                }
             }
+
             return result;
         }
 
-        void to_json(json& j, Account& account) {
+        void toJson(json& j, Account& account) {
             j = json{
                 {"name", account.getName()},
                 {"cpf", account.getCpf()},
