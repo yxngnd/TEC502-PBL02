@@ -181,38 +181,57 @@ int main(int argc, char* argv[]) {
 
     CROW_ROUTE(app, "/transfer").methods(crow::HTTPMethod::POST)
     ([&](const crow::request& req) {
-        auto body = crow::json::load(req.body);
-        if (!body || !body.has("senderCpf") || !body.has("receiverCpf") || !body.has("value") || !body.has("rbank") || !body.has("sbank")) {
+        auto body = json::parse(req.body);
+        if (!body.contains("senders") || !body.contains("receiver")) {
             return crow::response(400);
         }
 
-        std::string sbank = body["sbank"].s();
-        std::string rbank = body["rbank"].s();
-        std::string rHost = consortium[rbank];
-        std::string sHost = consortium[sbank];
+        auto senders = body["senders"];
+        auto receiver = body["receiver"];
 
-        double value = body["value"].d();
-        std::string senderCpf = body["senderCpf"].s();
-        std::string receiverCpf = body["receiverCpf"].s();
-
-        // Formatar o corpo da requisição como JSON corretamente
-        crow::json::wvalue sendBody;
-        sendBody["cpf"] = senderCpf;
-        sendBody["value"] = value;
-
-        // Enviar requisição para o servidor do remetente
-        httplib::Client sClient(sHost.c_str());
-        auto res = sClient.Post("/withdraw", sendBody.dump(), "application/json");
-
-        // Checar a resposta do servidor do remetente
-        if (!res || res->status != 200) {
-            return crow::response(404, "Transfer cannot be completed: withdrawal failed");
+        if (!receiver.contains("cpf") || !receiver.contains("bank") || !receiver.contains("value")) {
+            return crow::response(400);
         }
 
-        // Formatar o corpo da requisição como JSON corretamente
-        crow::json::wvalue receiveBody;
-        receiveBody["cpf"] = receiverCpf;
-        receiveBody["value"] = value;
+        std::string receiverCpf = receiver["cpf"];
+        std::string rbank = receiver["bank"];
+        double totalValue = receiver["value"];
+        std::string rHost = consortium[rbank];
+
+        double cumulativeValue = 0.0;
+
+        for (const auto& sender : senders) {
+            if (!sender.contains("cpf") || !sender.contains("bank") || !sender.contains("value")) {
+                return crow::response(400);
+            }
+
+            std::string senderCpf = sender["cpf"];
+            std::string sbank = sender["bank"];
+            double value = sender["value"];
+            cumulativeValue += value;
+
+            std::string sHost = consortium[sbank];
+
+            // Preparar o corpo da requisição como JSON corretamente
+            json sendBody = { {"cpf", senderCpf}, {"value", value} };
+
+            // Enviar requisição para o servidor do remetente
+            httplib::Client sClient(sHost.c_str());
+            auto res = sClient.Post("/withdraw", sendBody.dump(), "application/json");
+
+            // Checar a resposta do servidor do remetente
+            if (!res || res->status != 200) {
+                return crow::response(404, "Transfer cannot be completed: withdrawal failed");
+            }
+        }
+
+        // Certificar que o valor cumulativo seja igual ao valor a ser recebido
+        if (cumulativeValue != totalValue) {
+            return crow::response(400, "Total value mismatch");
+        }
+
+        // Preparar o corpo da requisição como JSON corretamente
+        json receiveBody = { {"cpf", receiverCpf}, {"value", totalValue} };
 
         // Enviar requisição para o servidor do receptor
         httplib::Client rClient(rHost.c_str());
@@ -222,8 +241,18 @@ int main(int argc, char* argv[]) {
         if (res1 && res1->status == 200) {
             return crow::response(200, "Transfer completed successfully");
         } else {
-            // Em caso de falha no depósito, tentar reverter a retirada
-            sClient.Post("/deposit", sendBody.dump(), "application/json");
+            // Em caso de falha no depósito, tentar reverter todas as retiradas
+            for (const auto& sender : senders) {
+                std::string senderCpf = sender["cpf"];
+                std::string sbank = sender["bank"];
+                double value = sender["value"];
+                std::string sHost = consortium[sbank];
+
+                json rollbackBody = { {"cpf", senderCpf}, {"value", value} };
+
+                httplib::Client sClient(sHost.c_str());
+                sClient.Post("/deposit", rollbackBody.dump(), "application/json");
+            }
             return crow::response(404, "Transfer cannot be completed: deposit failed");
         }
     });

@@ -1,11 +1,14 @@
 #include <iostream>
 #include "account.cpp"
+#include <map>
 
 class Transaction{
 
-    private:
+    public:
         int id;
         std::vector<Account> accounts;
+        std::map<Account, double> change;
+        bool prepared;
         bool done;
         bool success;
         int type;
