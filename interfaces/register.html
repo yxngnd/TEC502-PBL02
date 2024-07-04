@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Banco XYZ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input, select {
+            margin: 10px 0;
+            padding: 10px;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registro</h1>
+        <form id="registerForm">
+            <input type="text" id="nome" name="nome" placeholder="Nome" required>
+            <input type="text" id="cpf1" name="cpf1" placeholder="CPF" required>
+            <input type="password" id="senha" name="senha" placeholder="Senha" required>
+            <select id="tipoConta" name="tipoConta" required>
+                <option value="individual">Individual</option>
+                <option value="conjunta">Conjunta</option>
+            </select>
+            <input type="text" id="cpf2" name="cpf2" placeholder="CPF Conjunto" style="display: none;">
+            <button type="submit">Registrar</button>
+            <p class="error" id="errorMsg"></p>
+        </form>
+    </div>
+
+    <script>
+        const tipoConta = document.getElementById('tipoConta');
+        const cpf2 = document.getElementById('cpf2');
+
+        tipoConta.addEventListener('change', function() {
+            if (tipoConta.value === 'conjunta') {
+                cpf2.style.display = 'block';
+            } else {
+                cpf2.style.display = 'none';
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const nome = document.getElementById('nome').value;
+            const cpf1 = document.getElementById('cpf1').value;
+            const senha = document.getElementById('senha').value;
+            const tipo = document.getElementById('tipoConta').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            let cpf;
+            if (tipo === 'conjunta') {
+                const cpf2Value = document.getElementById('cpf2').value;
+                cpf = `${cpf1}&${cpf2Value}`;
+            } else {
+                cpf = cpf1;
+            }
+
+            fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ nome: nome, cpf: cpf, senha: senha, tipoConta: tipo })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/';
+                } else {
+                    errorMsg.textContent = 'Registro falhou. Por favor, tente novamente.';
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                errorMsg.textContent = 'Ocorreu um erro. Por favor, tente novamente.';
+            });
+        });
+    </script>
+</body>
+</html>

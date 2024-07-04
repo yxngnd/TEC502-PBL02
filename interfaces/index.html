@@ -1,52 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank API Frontend</title>
+    <title>Banco XYZ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .buttons a {
+            text-decoration: none;
+            color: white;
+            background-color: #007bff;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .buttons a:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h1>Bank API Frontend</h1>
-
-    <h2>Check Balance</h2>
-    <label for="account_id">Account ID:</label>
-    <input type="text" id="account_id">
-    <button onclick="checkBalance()">Check Balance</button>
-    <p id="balance"></p>
-
-    <h2>Deposit</h2>
-    <label for="deposit_id">Account ID:</label>
-    <input type="text" id="deposit_id">
-    <label for="deposit_amount">Amount:</label>
-    <input type="number" id="deposit_amount">
-    <button onclick="deposit()">Deposit</button>
-
-    <h2>Withdraw</h2>
-    <label for="withdraw_id">Account ID:</label>
-    <input type="text" id="withdraw_id">
-    <label for="withdraw_amount">Amount:</label>
-    <input type="number" id="withdraw_amount">
-    <button onclick="withdraw()">Withdraw</button>
-
-    <script>
-        function checkBalance() {
-            var accountId = document.getElementById("account_id").value;
-            fetch("http://localhost:8080/balance/" + accountId)
-                .then(response => response.text())
-                .then(data => document.getElementById("balance").innerText = "Balance: " + data);
-        }
-
-        function deposit() {
-            var accountId = document.getElementById("deposit_id").value;
-            var amount = document.getElementById("deposit_amount").value;
-            fetch("http://localhost:8080/deposit/" + accountId + "/" + amount, { method: 'POST' });
-        }
-
-        function withdraw() {
-            var accountId = document.getElementById("withdraw_id").value;
-            var amount = document.getElementById("withdraw_amount").value;
-            fetch("http://localhost:8080/withdraw/" + accountId + "/" + amount, { method: 'POST' });
-        }
-    </script>
+    <div class="container">
+        <h1>Banco XYZ</h1>
+        <div class="buttons">
+            <a href="login.html">Login</a>
+            <a href="registro.html">Registro</a>
+        </div>
+    </div>
 </body>
 </html>

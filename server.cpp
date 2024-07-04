@@ -51,6 +51,61 @@ int main(int argc, char* argv[]) {
         return crow::response(buffer.str());
     });
 
+    CROW_ROUTE(app, "/register").methods(crow::HTTPMethod::GET)
+    ([]() {
+        std::ifstream file("../interfaces/register.html");
+        if (!file.is_open()) {
+            return crow::response(404, "File not found.");
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return crow::response(buffer.str());
+    });
+
+    CROW_ROUTE(app, "/withdraw").methods(crow::HTTPMethod::GET)
+    ([]() {
+        std::ifstream file("../interfaces/withdraw.html");
+        if (!file.is_open()) {
+            return crow::response(404, "File not found.");
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return crow::response(buffer.str());
+    });
+
+    CROW_ROUTE(app, "/deposit").methods(crow::HTTPMethod::GET)
+    ([]() {
+        std::ifstream file("../interfaces/deposit.html");
+        if (!file.is_open()) {
+            return crow::response(404, "File not found.");
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return crow::response(buffer.str());
+    });
+
+    CROW_ROUTE(app, "/transfer").methods(crow::HTTPMethod::GET)
+    ([]() {
+        std::ifstream file("../interfaces/transfer.html");
+        if (!file.is_open()) {
+            return crow::response(404, "File not found.");
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return crow::response(buffer.str());
+    });
+
+    CROW_ROUTE(app, "/account").methods(crow::HTTPMethod::GET)
+    ([]() {
+        std::ifstream file("../interfaces/index.html");
+        if (!file.is_open()) {
+            return crow::response(404, "File not found.");
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return crow::response(buffer.str());
+    });
+
     CROW_ROUTE(app, "/login").methods(crow::HTTPMethod::GET)
     ([](){
         std::ifstream file("login.html");

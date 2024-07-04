@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contas - Banco XYZ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px;
+            margin: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .account {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin: 10px;
+            padding: 10px;
+            text-align: left;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Contas</h1>
+        <div id="accountsContainer"></div>
+        <div id="transactionContainer" class="hidden">
+            <h2>Transação</h2>
+            <div id="transactionForm"></div>
+        </div>
+        <p class="error" id="errorMsg"></p>
+        <p class="success" id="successMsg"></p>
+    </div>
+
+    <script>
+        const token = new URLSearchParams(window.location.search).get('token');
+        const accountsContainer = document.getElementById('accountsContainer');
+        const transactionContainer = document.getElementById('transactionContainer');
+        const transactionForm = document.getElementById('transactionForm');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+
+        function fetchAccounts() {
+            fetch(`/account?token=${token}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayAccounts(data);
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    errorMsg.textContent = 'Ocorreu um erro ao carregar as contas. Por favor, tente novamente.';
+                });
+        }
+
+        function displayAccounts(accounts) {
+            accountsContainer.innerHTML = '';
+            accounts.forEach((account, index) => {
+                const accountDiv = document.createElement('div');
+                accountDiv.className = 'account';
+                accountDiv.innerHTML = `
+                    <p><strong>Banco:</strong> ${account.banco}</p>
+                    <p><strong>Nome:</strong> ${account.account.nome}</p>
+                    <p><strong>CPF:</strong> ${account.account.cpf}</p>
+                    <p><strong>Tipo:</strong> ${account.account.tipo}</p>
+                    <p><strong>Saldo:</strong> R$ ${account.account.saldo.toFixed(2)}</p>
+                    <button onclick="showDepositForm(${index})">Depósito</button>
+                    <button onclick="showWithdrawForm(${index})">Saque</button>
+                    <button onclick="showTransferForm()">Transferência</button>
+                `;
+                accountsContainer.appendChild(accountDiv);
+            });
+        }
+
+        function showDepositForm(index) {
+            transactionForm.innerHTML = `
+                <p>CPF: <strong>${accounts[index].account.cpf}</strong></p>
+                <label for="depositValue">Valor do depósito:</label>
+                <input type="number" id="depositValue" required>
+                <button onclick="makeDeposit(${index})">Confirmar Depósito</button>
+            `;
+            transactionContainer.classList.remove('hidden');
+        }
+
+        function makeDeposit(index) {
+            const value = document.getElementById('depositValue').value;
+            const cpf = accounts[index].account.cpf;
+
+            fetch('/deposit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cpf: cpf, value: parseFloat(value) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    successMsg.textContent = 'Depósito realizado com sucesso!';
+                    errorMsg.textContent = '';
+                    fetchAccounts();
+                } else {
+                    errorMsg.textContent = 'Falha ao realizar depósito. Por favor, tente novamente.';
+                    successMsg.textContent = '';
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                errorMsg.textContent = 'Ocorreu um erro. Por favor, tente novamente.';
+                successMsg.textContent = '';
+            });
+        }
+
+        function showWithdrawForm(index) {
+            transactionForm.innerHTML = `
+                <p>CPF: <strong>${accounts[index].account.cpf}</strong></p>
+                <label for="withdrawValue">Valor do saque:</label>
+                <input type="number" id="withdrawValue" required>
+                <button onclick="makeWithdraw(${index})">Confirmar Saque</button>
+            `;
+            transactionContainer.classList.remove('hidden');
+        }
+
+        function makeWithdraw(index) {
+            const value = document.getElementById('withdrawValue').value;
+            const cpf = accounts[index].account.cpf;
+
+            fetch('/withdraw', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cpf: cpf, value: parseFloat(value) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    successMsg.textContent = 'Saque realizado com sucesso!';
+                    errorMsg.textContent = '';
+                    fetchAccounts();
+                } else {
+                    errorMsg.textContent = 'Falha ao realizar saque. Por favor, tente novamente.';
+                    successMsg.textContent = '';
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                errorMsg.textContent = 'Ocorreu um erro. Por favor, tente novamente.';
+                successMsg.textContent = '';
+            });
+        }
+
+        function showTransferForm() {
+            let accountOptions = accounts.map((account, index) => `
+                <option value="${index}">${account.account.nome} - ${account.account.cpf}</option>
+            `).join('');
+
+            transactionForm.innerHTML = `
+                <label for="senderAccounts">Contas para transferência:</label>
+                <select id="senderAccounts" multiple>
+                    ${accountOptions}
+                </select>
+                <label for="transferValue">Valor:</label>
+                <input type="number" id="transferValue" required>
+                <h3>Destinatário</h3>
+                <label for="receiverCpf">CPF:</label>
+                <input type="text" id="receiverCpf" required>
+                <label for="receiverBank">Banco:</label>
+                <input type="text" id="receiverBank" required>
+                <button onclick="makeTransfer()">Confirmar Transferência</button>
+            `;
+            transactionContainer.classList.remove('hidden');
+        }
+
+        function makeTransfer() {
+            const selectedAccounts = Array.from(document.getElementById('senderAccounts').selectedOptions).map(option => parseInt(option.value));
+            const transferValue = document.getElementById('transferValue').value;
+            const receiverCpf = document.getElementById('receiverCpf').value;
+            const receiverBank = document.getElementById('receiverBank').value;
+
+            const senders = selectedAccounts.map(index => ({
+                cpf: accounts[index].account.cpf,
+                bank: accounts[index].banco,
+                value: parseFloat(transferValue)
+            }));
+
+            const receiver = {
+                cpf: receiverCpf,
+                bank: receiverBank,
+                value: parseFloat(transferValue)
+            };
+
+            fetch('/transfer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ senders: senders, receiver: receiver })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    successMsg.textContent = 'Transferência realizada com sucesso!';
+                    errorMsg.textContent = '';
+                    fetchAccounts();
+                } else {
+                    errorMsg.textContent = 'Falha ao realizar transferência. Por favor, tente novamente.';
+                    successMsg.textContent = '';
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                errorMsg.textContent = 'Ocorreu um erro. Por favor, tente novamente.';
+                successMsg.textContent = '';
+            });
+        }
+
+        fetchAccounts();
+    </script>
+</body>
+</html>
