@@ -13,19 +13,6 @@ class Bank{
     public:
         //std::string viewAccounts();
 
-        // Função auxiliar para separar os cpfs em contas conjuntas
-        std::vector<std::string> splitCpf(const std::string& cpf) {
-            std::vector<std::string> cpfs;
-            size_t pos = cpf.find('&');
-            if (pos != std::string::npos) {
-                cpfs.push_back(cpf.substr(0, pos));
-                cpfs.push_back(cpf.substr(pos + 1));
-            } else {
-                cpfs.push_back(cpf);
-            }
-            return cpfs;
-        }
-
         bool login(const std::string& cpf, const std::string& password, Account& account) {
             std::lock_guard<std::mutex> lock(mtx);
             auto it = accounts.find(cpf);

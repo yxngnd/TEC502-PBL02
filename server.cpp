@@ -22,12 +22,6 @@ std::unordered_map<std::string, std::string> consortium = {
 
 std::unordered_map<std::string, std::string> sessions;
 
-std::string generateSessionToken() {
-    // Gera um token de sessão aleatório
-    std::string token = std::to_string(std::rand()) + std::to_string(std::time(0));
-    return token;
-}
-
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
@@ -97,7 +91,7 @@ int main(int argc, char* argv[]) {
 
     CROW_ROUTE(app, "/account").methods(crow::HTTPMethod::GET)
     ([]() {
-        std::ifstream file("../interfaces/index.html");
+        std::ifstream file("../interfaces/account.html");
         if (!file.is_open()) {
             return crow::response(404, "File not found.");
         }
@@ -108,7 +102,7 @@ int main(int argc, char* argv[]) {
 
     CROW_ROUTE(app, "/login").methods(crow::HTTPMethod::GET)
     ([](){
-        std::ifstream file("login.html");
+        std::ifstream file("../interfaces/login.html");
         if (!file.is_open()){
             return crow::response(404, "File not found.");
         }
@@ -129,14 +123,10 @@ int main(int argc, char* argv[]) {
         if (success) {
             crow::json::wvalue res;
 
-            std::string sessionToken = generateSessionToken();
-            sessions[sessionToken] = account.getCpf();
-
             res["name"] = account.getName();
             res["cpf"] = account.getCpf();
             res["type"] = account.getType();
             res["balance"] = account.getBalance();
-            res["token"] = sessionToken; 
             return crow::response(200, res);
         } else {
             return crow::response(401, "Invalid credentials");
@@ -167,11 +157,10 @@ int main(int argc, char* argv[]) {
         return crow::response(200, data.dump());
     });
     
-    CROW_ROUTE(app, "/account").methods(crow::HTTPMethod::GET)
+    CROW_ROUTE(app, "/accounts").methods(crow::HTTPMethod::GET)
     ([](const crow::request& req) {
-        std::string token = req.url_params.get("token");
+        std::string cpf = req.url_params.get("cpf");
 
-        std::string cpf = sessions[token];
         json accountsList = json::array();
         bool foundAccounts = false;
 
