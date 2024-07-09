@@ -12,23 +12,21 @@
 using json = nlohmann::json;
 std::mutex accounts_mutex;
 
+const char * bank1 = getenv("BANK1");
+const char * bank2 = getenv("BANK2");
+const char * bank3 = getenv("BANK3");
+
 std::unordered_map<std::string, std::string> consortium = {
 
-    {"BANCO1", "127.0.0.1:8080"},
-    {"BANCO2", "127.0.0.1:8081"},
-    {"BANCO3", "127.0.0.1:8082"}
+    {"BANCO1", bank1},
+    {"BANCO2", bank2},
+    {"BANCO3", bank3}
 
 };
 
 std::unordered_map<std::string, std::string> sessions;
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
-        return 1;
-    }
-    int port = std::stoi(argv[1]);
-
+int main() {
     crow::SimpleApp app;
 
     Account account;
@@ -313,6 +311,6 @@ int main(int argc, char* argv[]) {
         }
     });
 
-    app.port(port).multithreaded().run();
+    app.port(8080).multithreaded().run();
     return 0;
 }
