@@ -20,7 +20,7 @@ docker pull yxngnd/bank_server:latest
 ```
 Execute a imagem e substitua os campo *bankx_host* pelo ip do server de cada banco, o formato do ip deve sero seguinte: ip:port, substitua também o campo *port* pela porta que o servidor estará rodando, é necessário que a porta do campo *port* seja a mesma que está no host do banco.
 ```bash
-docker run -it --network=host -e PORT="port" -e BANK1="bank1_host" -e BANK2="bank2_host" -e BANK3="bank3_host" yxngnd/bank_server
+docker run -it -p port:port -e PORT="port" -e BANK1="bank1_host" -e BANK2="bank2_host" -e BANK3="bank3_host" yxngnd/bank_server
 ```
 
 ## Introdução
