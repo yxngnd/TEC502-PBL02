@@ -40,5 +40,55 @@ O produto finalizado finalizado consiste em um servidor que faz todo gerenciamen
 - **Figura 1:** *Diagrama da comunicação entre os bancos.*
 
 ## Gerenciamento de Contas
-Permite gerenciar contas ?
-Permite selecionar e realizar transferência entre diferentes contas?
+Para fazer o gerenciamento de contas foram implementadas as funcionalidades de cadastro, login, depósito, saque e transferência, acessadas através de requisições na API, possibilitando que o cliente crie e acesse suas contas através da interface da aplicação, além de manipular o saldo das contas ao retirar, adicionar ou transferir dinheiro para outra conta.
+
+O sistem faz uso de uma tela única para que o cliente faça o gerenciamento das suas contas, nessa tela é exibida cada conta que o cliente possui vinculada ao seu CPF, independente de qual banco esteja, as operações de saque e depósito são feitas apenas na conta do banco que o cliente está logado no momento, porém, na operação de transferência o cliente pode selecionar uma ou mais de suas contas, junto ao valor que vai ser retirado de cada uma delas para que seja enviado à conta destino.
+
+## Comunicação
+
+Para fazer a comunicação tanto da interface com o servidor do banco, quanto a comunicação entre banco foi utilizado o protocolo HTTP, um define os padrões para troca de dados entre programas de aplicação, essenciais para comunicação feita entre aplicaçãos em diferentes dispositivos, sendo desenvolvida uma API Restful, permitindo que sejam feitas requisições à API através da interface do cliente. Ao realizar alguma das operações na interface, uma solicitação é enviada a API e o servidor fica responsável por fazer o tratamento adequado e retornar uma mensagem de confirmação que pode ou não retornar dados, ou uma mensagem de erro em caso de falha de uma das operações.
+
+As rotas desenvolvidas para cada uma das operações estão demonstradas na tabela a seguir:
+
+| Rota          | Método        | Envio         | Resposta      |   
+| ------------- | ------------- | ------------- | ------------- |
+| "/login"      |      POST     |JSON: {"cpf": string, "password": string}|status: 200 - JSON: {"name": string, "cpf": string, "type": boolean, "balance": double}
+status: 400
+status: 401 - message: "Invalid credentials"|
+| "/register"   |      POST     |JSON: {"name": string, "cpf": string, "type": boolean, "password": string}|status: 200 - message: "Account created successfully"
+status: 400
+status: 400 - message: "Error when creating account"|
+| "/account/cpf"|      GET      |PARAMS: cpf=string|status: 200 - JSON: {[{"cpf": string, "bank": string, "balance": double}]}|
+| "/accounts"   |      GET      |PARAMS: cpf=string|status: 500 - message: "Invalid JSON response from bank"
+status: 200 - JSON: {["bank_name": string, "account": {"cpf": string, "bank": string, "balance": double}]}
+status: 404 - message: "No accounts found in consortium for the given CPF"|
+| "/deposit"    |      POST     |JSON: {"cpf": string, "value": double}|status: 400 - message: "Invalid JSON"
+status: 200 - message: "Deposit make with success"
+status: 404|
+| "/withdraw"   |      POST     |JSON: {"cpf": string, "value": double}|status: 400 - message: "Invalid JSON"
+status: 200 - message: "withdraw make with success"
+status: 404|
+| "/transfer"   |      POST     |JSON: {"senders": [{"cpf": string, "bank": string, "balance": double}], "receiver": {"cpf": string, "bank": string,"value": double}}|status: 200 - message: "Transfer completed successfully"
+status: 400
+status: 404 - message: "Transfer cannot be completed: deposit failed"|
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

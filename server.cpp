@@ -208,7 +208,7 @@ int main() {
     ([&bank](const crow::request& req) {
         auto body = crow::json::load(req.body);
         if(!body || !body.has("cpf") || !body.has("value")){
-            return crow::response(400);
+            return crow::response(400, "Invalid JSON");
         }
 
         bool success = bank.withdraw(body["cpf"].s(), body["value"].d());
