@@ -18,9 +18,9 @@ Execute o seguinte comando para obter a imagem do servidor:
 ```bash
 docker pull yxngnd/bank_server:latest
 ```
-Execute a imagem e substitua os campo *bankx_host* pelo ip do server de cada banco, o formato do ip deve sero seguinte: ip:8080, a porta 8080 deve ser sempre a utilizada devido a forma que o produto foi desenvolvido.
+Execute a imagem e substitua os campo *bankx_host* pelo ip do server de cada banco, o formato do ip deve sero seguinte: ip:port, substitua também o campo *port* pela porta que o servidor estará rodando, é necessário que a porta do campo *port* seja a mesma que está no host do banco.
 ```bash
-docker run -it --network=host -e BANK1={bank1_host} -e BANK2={bank2_host} -e BANK3={bank3_host} yxngnd/bank_server
+docker run -it --network=host -e PORT="port" -e BANK1="bank1_host" -e BANK2="bank2_host" -e BANK3="bank3_host" yxngnd/bank_server
 ```
 
 ## Introdução
@@ -60,9 +60,27 @@ As rotas desenvolvidas para cada uma das operações estão demonstradas na tabe
 | "/withdraw"   |      POST     |JSON: {"cpf": string, "value": double}|status: 400 - message: "Invalid JSON"  <br /> status: 200 - message: "withdraw make with success"  <br /> status: 404|
 | "/transfer"   |      POST     |JSON: {"senders": [{"cpf": string, "bank": string, "balance": double}], "receiver": {"cpf": string, "bank": string,"value": double}}|status: 200 - message: "Transfer completed successfully"  <br /> status: 400  <br /> status: 404 - message: "Transfer cannot be completed: deposit failed"|
 
+### Descrição das rotas
 
+-  */login*: Rota utilizada para fazer o login, recebe um JSON contendo o CPF e a senha do usuário, caso o CPF e senha existam no banco, o usuário é redirecionado para a rota */accounts*, caso algum dado esteja incorreto o usuário é informado do erro.
+-  */register*: Rota utilizada para fazer o registro do cliente, recebe um JSON contendo nome, CPF, senha e tipo da conta (individual ou conjunta), caso selecione conjunta o CPF continua sendo enviado numa string única no formato "cpf1&cpf2", se o registro for um sucesso o usuário é informado que sua cotna foi criada e é redirecionado para a tela inicial *"/"*, se caso o cpf já estiver registrado, o usuário é informado do erro e a conta não é criada.
+-  */account/cpf*: Rota auxiliar utilizada para recuperar todas as conta, uma individual e **n** contas conjuntas que o cliente pode ter num determinado banco.
+-  */accounts*: Rota que retorna todas as contas que estão vinculadas a um determinado CPF em todos os bancos do consórcio, faz uma requisição GET na rota *"/account/cpf"* de cada banco, recuperando as contas e colocando-as numa lista e enviando a lista como resposta para a interface.
+-  */deposit*: Rota responsável pelo depósito na conta que está logada, recebe um JSON contendo CPF e valor, retornando a resposta de confirmação de depósito ou de erro caso haja alguma falha.
+-  */withdraw*: Rota responsável pelo saquena conta que está logada, recebe um JSON contendo CPF e valor, retornando a resposta de confirmação de saque ou de erro caso haja alguma falha, como saldo insuficiente.
+-  */transfer*: Rota responsável por fazer toda a parte de transferência de saldo das contas, recebe um JSON contendo uma lista de contas *senders* que é uma relação de banco e conta de onde vão ser tirado o dinheiro da trnsferência e *receiver* que é as informações da conta destino do dinheiro da transferência. Dentro da rota são feitas requisições POST na rota *"/withdraw"* para cada uma das contas contidas em *senders* e uma requisição POST em *"/deposit"* para a conta contina em *receiver*. Em caso de erro é feito um gerenciamento das contas envolvidas para que o saldo não seja perdido e seja adequadamente retornado a conta origem.
 
+## Algoritmo de Concorrência
 
+Para evitar problemas relacionados à concorrência, foi implementado o padrão Two-phase commit(2PC) no produto, o 2PC é um algoritmo distribuído que coordena todos os processos que participam de uma transação atômica distribuída, decidindo se a transação deve ser confirmada ou abortada (revertida).
+
+O algoritmo é implementado na operação de transferência e funciona da seguinte forma: após receber as contas que participarão da transação e verificar se todas as informações estão nos conformes, é criado uma lista de *rollback*, onde estarão armazenadas as contas que já passaram por alguma fase do processo e que por algum erro precise ser revertido, é então iniciado as fases de preparação e confirmação, durante essas fases é feito uma tentativa de retirada de saldo de cada uma das contas que estão enviando o dinheiro, após ser feita a retirada do dinheiro, a conta é adicionada na lista de *rollback*, caso uma das contas falhe por saldo insuficiente ou outro erro de comunicação, a operação é abortado e o *rolback é feito*, caso todas as operações de retirada de saldo sejam um sucesso, é feito a segunda parte da confirmação, onde é depositada o saldo na conta do receptor, caso o depósito não possa ser concluído, é feito o *rollback*, caso seja concluído é retornado a mensagem de confirmação ao cliente através da interface.
+
+Além disso, para evitar outros problemas internos, foi utilizado um mutex nas operações do banco feitas nas contas, evintando problemas envolvendo o acesso de múltiplas threads a uma região crítica.
+
+## Tratamento da Confiabilidade
+
+Ao tentar fazer requisições em um banco que está desconectado, a operação não é concluída até que o banco seja conectado novamente, em caso de falha de conexão durante uma transferência é feito um *rollback* para garantir que nenhum valor seja perdido por nenhuma das contas envolvidas nas transações.
 
 
 

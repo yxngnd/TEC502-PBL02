@@ -10,11 +10,12 @@
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
-std::mutex accounts_mutex;
 
 const char * bank1 = getenv("BANK1");
 const char * bank2 = getenv("BANK2");
 const char * bank3 = getenv("BANK3");
+const char * portstr = getenv("PORT");
+int port = atoi(portstr);
 
 std::unordered_map<std::string, std::string> consortium = {
 
@@ -257,7 +258,7 @@ int main() {
         }
 
         // Preparação e commit das operações de retirada
-        std::vector<std::pair<std::string, double>> successfulWithdrawals;
+        std::vector<std::pair<std::string, double>> successfulWithdraws;
         for (const auto& sender : senders) {
             std::string senderCpf = sender["cpf"];
             std::string senderBank = sender["bank"];
@@ -271,9 +272,9 @@ int main() {
 
             if (!res || res->status != 200) {
                 // Em caso de falha na retirada, reverter retiradas anteriores
-                for (const auto& successfulWithdrawal : successfulWithdrawals) {
-                    std::string rollbackCpf = successfulWithdrawal.first;
-                    double rollbackValue = successfulWithdrawal.second;
+                for (const auto& successfulWithdraw : successfulWithdraws) {
+                    std::string rollbackCpf = successfulWithdraw.first;
+                    double rollbackValue = successfulWithdraw.second;
                     json rollbackBody = { {"cpf", rollbackCpf}, {"value", rollbackValue} };
 
                     httplib::Client rollbackClient(consortium[senderBank].c_str());
@@ -281,7 +282,7 @@ int main() {
                 }
                 return crow::response(404, "Transfer cannot be completed: withdrawal failed");
             } else {
-                successfulWithdrawals.push_back({senderCpf, value});
+                successfulWithdraws.push_back({senderCpf, value});
             }
         }
 
@@ -297,9 +298,9 @@ int main() {
             return crow::response(200, "Transfer completed successfully");
         } else {
             // Em caso de falha no depósito, tentar reverter todas as retiradas
-            for (const auto& successfulWithdrawal : successfulWithdrawals) {
-                std::string rollbackCpf = successfulWithdrawal.first;
-                double rollbackValue = successfulWithdrawal.second;
+            for (const auto& successfulWithdraw : successfulWithdraws) {
+                std::string rollbackCpf = successfulWithdraw.first;
+                double rollbackValue = successfulWithdraw.second;
                 std::string rollbackHost = consortium[receiverBank];
 
                 json rollbackBody = { {"cpf", rollbackCpf}, {"value", rollbackValue} };
@@ -311,6 +312,6 @@ int main() {
         }
     });
 
-    app.port(8080).multithreaded().run();
+    app.port(port).multithreaded().run();
     return 0;
 }
