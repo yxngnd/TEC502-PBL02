@@ -81,20 +81,3 @@ Além disso, para evitar outros problemas internos, foi utilizado um mutex nas o
 ## Tratamento da Confiabilidade
 
 Ao tentar fazer requisições em um banco que está desconectado, a operação não é concluída até que o banco seja conectado novamente, em caso de falha de conexão durante uma transferência é feito um *rollback* para garantir que nenhum valor seja perdido por nenhuma das contas envolvidas nas transações.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
