@@ -52,25 +52,13 @@ As rotas desenvolvidas para cada uma das operações estão demonstradas na tabe
 
 | Rota          | Método        | Envio         | Resposta      |   
 | ------------- | ------------- | ------------- | ------------- |
-| "/login"      |      POST     |JSON: {"cpf": string, "password": string}|status: 200 - JSON: {"name": string, "cpf": string, "type": boolean, "balance": double}
-status: 400
-status: 401 - message: "Invalid credentials"|
-| "/register"   |      POST     |JSON: {"name": string, "cpf": string, "type": boolean, "password": string}|status: 200 - message: "Account created successfully"
-status: 400
-status: 400 - message: "Error when creating account"|
+| "/login"      |      POST     |JSON: {"cpf": string, "password": string}|status: 200 - JSON: {"name": string, "cpf": string, "type": boolean, "balance": double} <br /> status: 400 <br /> status: 401 - message: "Invalid credentials"|
+| "/register"   |      POST     |JSON: {"name": string, "cpf": string, "type": boolean, "password": string}|status: 200 - message: "Account created successfully"  <br /> status: 400  <br /> status: 400 - message: "Error when creating account"|
 | "/account/cpf"|      GET      |PARAMS: cpf=string|status: 200 - JSON: {[{"cpf": string, "bank": string, "balance": double}]}|
-| "/accounts"   |      GET      |PARAMS: cpf=string|status: 500 - message: "Invalid JSON response from bank"
-status: 200 - JSON: {["bank_name": string, "account": {"cpf": string, "bank": string, "balance": double}]}
-status: 404 - message: "No accounts found in consortium for the given CPF"|
-| "/deposit"    |      POST     |JSON: {"cpf": string, "value": double}|status: 400 - message: "Invalid JSON"
-status: 200 - message: "Deposit make with success"
-status: 404|
-| "/withdraw"   |      POST     |JSON: {"cpf": string, "value": double}|status: 400 - message: "Invalid JSON"
-status: 200 - message: "withdraw make with success"
-status: 404|
-| "/transfer"   |      POST     |JSON: {"senders": [{"cpf": string, "bank": string, "balance": double}], "receiver": {"cpf": string, "bank": string,"value": double}}|status: 200 - message: "Transfer completed successfully"
-status: 400
-status: 404 - message: "Transfer cannot be completed: deposit failed"|
+| "/accounts"   |      GET      |PARAMS: cpf=string|status: 500 - message: "Invalid JSON response from bank"  <br /> status: 200 - JSON: {["bank_name": string, "account": {"cpf": string, "bank": string, "balance": double}]}  <br /> status: 404 - message: "No accounts found in consortium for the given CPF"|
+| "/deposit"    |      POST     |JSON: {"cpf": string, "value": double}|status: 400 - message: "Invalid JSON" <br /> status: 200 - message: "Deposit make with success"  <br /> status: 404|
+| "/withdraw"   |      POST     |JSON: {"cpf": string, "value": double}|status: 400 - message: "Invalid JSON"  <br /> status: 200 - message: "withdraw make with success"  <br /> status: 404|
+| "/transfer"   |      POST     |JSON: {"senders": [{"cpf": string, "bank": string, "balance": double}], "receiver": {"cpf": string, "bank": string,"value": double}}|status: 200 - message: "Transfer completed successfully"  <br /> status: 400  <br /> status: 404 - message: "Transfer cannot be completed: deposit failed"|
 
 
 
