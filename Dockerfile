@@ -31,10 +31,10 @@ RUN git clone --depth=1 https://github.com/yhirose/cpp-httplib /tmp/httplib && \
     cp -R /tmp/httplib /usr/local/include/httplib
 
 # Criando o diretório de trabalho
-WORKDIR /app
+WORKDIR /.
 
 # Copiando o arquivo json.hpp para o diretório de trabalho
-RUN cp /usr/local/include/json.hpp /app/json.hpp
+RUN cp /usr/local/include/json.hpp /json.hpp
 
 RUN apt install nlohmann-json3-dev
 
@@ -42,7 +42,7 @@ RUN apt install nlohmann-json3-dev
 COPY . .
 
 # Compilando o código
-RUN g++ -std=c++11 -o server server.cpp -I/app -I/usr/local/include/httplib -lboost_system -lpthread
+RUN g++ -std=c++11 -o server server.cpp -I/. -I/usr/local/include/httplib -lboost_system -lpthread
 
 # Expondo a porta que o servidor usará
 EXPOSE 8080
